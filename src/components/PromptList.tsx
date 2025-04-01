@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAppContext } from "../lib/AppContext";
 
 export default function PromptList() {
-  const { prompts, setPrompts, runPrompt, loading, apiKey } = useAppContext();
+  const { prompts, setPrompts, runPrompt, loading, apiKey, setSelectedPrompt } = useAppContext();
 
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState<string>("");
@@ -87,7 +87,10 @@ export default function PromptList() {
                 </div>
                 <div className="flex justify-end items-center">
                   <button
-                    onClick={() => runPrompt(prompt)}
+                    onClick={() => {
+                      setSelectedPrompt(prompt);
+                      runPrompt(prompt);
+                    }}
                     className={`mr-3 ${loading || !apiKey ? "opacity-40 cursor-not-allowed" : "hover:opacity-80"}`}
                     disabled={loading || !apiKey}
                     title={

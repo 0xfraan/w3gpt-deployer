@@ -10,7 +10,9 @@ export default function RunButton() {
   } = useAppContext();
 
   const handleRunPrompt = () => {
-    runPrompt();
+    if (selectedPrompt) {
+      runPrompt(selectedPrompt);
+    }
   };
 
   return (

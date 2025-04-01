@@ -12,6 +12,8 @@ import { generateSmartContract } from "./api";
 interface AppContextType {
   prompts: string[];
   setPrompts: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedPrompt: string;
+  setSelectedPrompt: React.Dispatch<React.SetStateAction<string>>;
   apiKey: string;
   setApiKey: React.Dispatch<React.SetStateAction<string>>;
   chainId: string;
@@ -26,7 +28,9 @@ interface AppContextType {
   isAutoRunning: boolean;
   startAutoRun: () => void;
   stopAutoRun: () => void;
-  runPrompt: (prompt: string) => Promise<void>;
+  runPrompt: (prompt?: string) => Promise<void>;
+  result: string;
+  setResult: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -41,12 +45,14 @@ export const useAppContext = () => {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [prompts, setPrompts] = useState<string[]>(defaultPrompts);
+  const [selectedPrompt, setSelectedPrompt] = useState<string>("");
   const [apiKey, setApiKey] = useState<string>("");
   const [chainId, setChainId] = useState<string>("11155420"); // Default to Optimism Sepolia
   const [loading, setLoading] = useState<boolean>(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [autoRunDelay, setAutoRunDelay] = useState<number>(600);
   const [isAutoRunning, setIsAutoRunning] = useState<boolean>(false);
+  const [result, setResult] = useState<string>("");
 
   const autoRunIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
@@ -71,8 +77,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const runPrompt = async (prompt: string) => {
-    if (!prompt) {
+  const runPrompt = async (prompt?: string) => {
+    // Use the provided prompt or fall back to the selected prompt
+    const promptToUse = prompt || selectedPrompt;
+    
+    if (!promptToUse) {
       addLog("Error: No prompt provided");
       return;
     }
@@ -85,17 +94,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       // Store just the essential info
-      addLog(`Running prompt: "${prompt}"`);
+      addLog(`Running prompt: "${promptToUse}"`);
       addLog(`Chain ID: ${chainId}`);
 
       const response = await generateSmartContract(
         { apiKey, chainId },
-        { prompt, chainId },
+        { prompt: promptToUse, chainId },
       );
 
       // Log success and response data
       addLog("Smart contract generated successfully");
       addLog(formatResponseForLogs(response));
+      
+      // Set the result
+      setResult(formatResponseForLogs(response));
     } catch (error) {
       console.error("Error running prompt:", error);
       const errorMessage =
@@ -180,6 +192,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = {
     prompts,
     setPrompts,
+    selectedPrompt,
+    setSelectedPrompt,
     apiKey,
     setApiKey,
     chainId,
@@ -195,6 +209,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     startAutoRun,
     stopAutoRun,
     runPrompt,
+    result,
+    setResult,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
